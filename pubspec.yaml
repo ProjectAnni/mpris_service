@@ -1,0 +1,20 @@
+name: mpris_service
+description: D-Bus MPRIS controls for Linux.
+version: 0.0.1
+homepage:
+
+environment:
+  sdk: '>=2.18.0-265.0.dev <3.0.0'
+  flutter: ">=2.5.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  dbus: ^0.7.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
