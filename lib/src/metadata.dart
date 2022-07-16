@@ -109,7 +109,7 @@ class Metadata {
         "mpris:length": DBusInt64(trackLength!.inMicroseconds),
       if (trackArtist != null) "xesam:artist": DBusArray.string(trackArtist!),
       if (lyrics != null) "xesam:asText": DBusString(lyrics!),
-      if (artUrl != null) "xesam:artUrl": DBusString(artUrl!),
+      if (artUrl != null) "mpris:artUrl": DBusString(artUrl!),
       if (albumName != null) "xesam:album": DBusString(albumName!),
       if (albumArtist != null)
         "xesam:albumArtist": DBusArray.string(albumArtist!),
