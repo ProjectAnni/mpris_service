@@ -27,6 +27,7 @@ class MPRISService extends DBusObject {
     this.supportedUriSchemes = const [],
     this.supportedMimeTypes = const [],
     this.canControl = true,
+    this.emitSeekedSignal = false,
     bool canPlay = true,
     bool canPause = true,
     bool canGoPrevious = true,
@@ -91,6 +92,9 @@ class MPRISService extends DBusObject {
   /// This property is not expected to change, as it describes an intrinsic capability of the implementation.
   /// If this is false, clients should assume that all properties on this interface are read-only (and will raise errors if writing to them is attempted), no methods are implemented and all other properties starting with "Can" are also false.
   final bool canControl;
+
+  /// Whether to emit Seeked signal after position change
+  final bool emitSeekedSignal;
 
   bool _canGoPrevious;
   set canGoPrevious(bool canGoPrevious) {
@@ -188,7 +192,17 @@ class MPRISService extends DBusObject {
     _metadata = metadata;
   }
 
-  Duration position = Duration.zero;
+  int _position = 0;
+  set position(Duration position) {
+    _position = position.inMicroseconds;
+    if (emitSeekedSignal) {
+      emitSignal(
+        "org.mpris.MediaPlayer2.Player",
+        "Seeked",
+        [DBusInt64(_position)],
+      );
+    }
+  }
 
   @override
   List<DBusIntrospectInterface> introspect() {
@@ -408,7 +422,7 @@ class MPRISService extends DBusObject {
       } else if (name == 'Volume') {
         return DBusMethodSuccessResponse([const DBusDouble(1)]);
       } else if (name == 'Position') {
-        return DBusMethodSuccessResponse([DBusInt64(position.inMicroseconds)]);
+        return DBusMethodSuccessResponse([DBusInt64(_position)]);
       } else if (name == 'MinimumRate') {
         return DBusMethodSuccessResponse([const DBusDouble(1)]);
       } else if (name == 'MaximumRate') {
