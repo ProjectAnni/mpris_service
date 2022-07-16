@@ -174,12 +174,11 @@ class MPRISService extends DBusObject {
     _playingStatus = playingStatus;
   }
 
-  MPRISMetadata _metadata = MPRISMetadata(
+  Metadata _metadata = Metadata(
     trackId: "/org/mpris/MediaPlayer2/TrackList/NoTrack",
     trackTitle: "No title",
-    trackLength: const Duration(seconds: 10),
   );
-  set metadata(MPRISMetadata metadata) {
+  set metadata(Metadata metadata) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
       changedProperties: {

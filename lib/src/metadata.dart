@@ -1,8 +1,8 @@
 import 'package:dbus/dbus.dart';
 
 /// https://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata/
-class MPRISMetadata {
-  MPRISMetadata({
+class Metadata {
+  Metadata({
     required this.trackId,
     required this.trackTitle,
     this.trackLength,
@@ -117,5 +117,31 @@ class MPRISMetadata {
       if (trackNumber != null) "xesam:trackNumber": DBusInt64(trackNumber!),
     });
     return result;
+  }
+
+  Metadata copyWith({
+    String? trackId,
+    String? trackTitle,
+    Duration? trackLength,
+    List<String>? trackArtist,
+    String? lyrics,
+    String? artUrl,
+    String? albumName,
+    List<String>? albumArtist,
+    int? discNumber,
+    int? trackNumber,
+  }) {
+    return Metadata(
+      trackId: trackId ?? this.trackId,
+      trackTitle: trackTitle ?? this.trackTitle,
+      trackLength: trackLength ?? this.trackLength,
+      trackArtist: trackArtist ?? this.trackArtist,
+      lyrics: lyrics ?? this.lyrics,
+      artUrl: artUrl ?? this.artUrl,
+      albumName: albumName ?? this.albumName,
+      albumArtist: albumArtist ?? this.albumArtist,
+      discNumber: discNumber ?? this.discNumber,
+      trackNumber: trackNumber ?? this.trackNumber,
+    );
   }
 }
