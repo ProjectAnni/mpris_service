@@ -135,7 +135,7 @@ class MPRISService extends DBusObject {
     _canGoPrevious = canGoPrevious;
   }
 
-  Future<void> doPrevious() async {}
+  Future<void> onPrevious() async {}
 
   bool _canGoNext;
   bool get canGoNext => _canGoNext;
@@ -149,7 +149,7 @@ class MPRISService extends DBusObject {
     _canGoNext = canGoNext;
   }
 
-  Future<void> doNext() async {}
+  Future<void> onNext() async {}
 
   bool _canPlay;
   bool get canPlay => _canPlay;
@@ -163,7 +163,7 @@ class MPRISService extends DBusObject {
     _canPlay = canPlay;
   }
 
-  Future<void> doPlay() async {}
+  Future<void> onPlay() async {}
 
   bool _canPause;
   bool get canPause => _canPause;
@@ -177,9 +177,9 @@ class MPRISService extends DBusObject {
     _canPause = canPause;
   }
 
-  Future<void> doPause() async {}
+  Future<void> onPause() async {}
 
-  Future<void> doPlayPause() async {}
+  Future<void> onPlayPause() async {}
 
   bool _canSeek;
   bool get canSeek => _canSeek;
@@ -193,11 +193,11 @@ class MPRISService extends DBusObject {
     _canSeek = canSeek;
   }
 
-  Future<void> doSeek(int offset) async {}
+  Future<void> onSeek(int offset) async {}
 
-  Future<void> doStop() async {}
-  Future<void> doSetPosition(String trackId, int position) async {}
-  Future<void> doOpenUri(String uri) async {}
+  Future<void> onStop() async {}
+  Future<void> onSetPosition(String trackId, int position) async {}
+  Future<void> onOpenUri(String uri) async {}
 
   PlaybackStatus _playbackStatus = PlaybackStatus.stopped;
   PlaybackStatus get playingStatus => _playbackStatus;
@@ -433,56 +433,56 @@ class MPRISService extends DBusObject {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doNext();
+        await onNext();
         return DBusMethodSuccessResponse();
       } else if (methodCall.name == 'Previous') {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doPrevious();
+        await onPrevious();
         return DBusMethodSuccessResponse();
       } else if (methodCall.name == 'Pause') {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doPause();
+        await onPause();
         return DBusMethodSuccessResponse();
       } else if (methodCall.name == 'PlayPause') {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doPlayPause();
+        await onPlayPause();
         return DBusMethodSuccessResponse();
       } else if (methodCall.name == 'Stop') {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doStop();
+        await onStop();
         return DBusMethodSuccessResponse();
       } else if (methodCall.name == 'Play') {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doPlay();
+        await onPlay();
         return DBusMethodSuccessResponse();
       } else if (methodCall.name == 'Seek') {
         if (methodCall.signature != DBusSignature('x')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doSeek(methodCall.values[0].asInt64());
+        await onSeek(methodCall.values[0].asInt64());
         return DBusMethodSuccessResponse();
       } else if (methodCall.name == 'SetPosition') {
         if (methodCall.signature != DBusSignature('ox')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doSetPosition(methodCall.values[0].asObjectPath().asString(),
+        await onSetPosition(methodCall.values[0].asObjectPath().asString(),
             methodCall.values[1].asInt64());
         return DBusMethodSuccessResponse();
       } else if (methodCall.name == 'OpenUri') {
         if (methodCall.signature != DBusSignature('s')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        await doOpenUri(methodCall.values[0].asString());
+        await onOpenUri(methodCall.values[0].asString());
         return DBusMethodSuccessResponse();
       } else {
         return DBusMethodErrorResponse.unknownMethod();

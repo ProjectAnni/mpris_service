@@ -51,12 +51,12 @@ class MyService extends MPRISService {
         );
 
   @override
-  Future<void> doPrevious() async {
+  Future<void> onPrevious() async {
     debugPrint("previous");
   }
 
   @override
-  Future<void> doNext() async {
+  Future<void> onNext() async {
     debugPrint("next");
   }
 }
