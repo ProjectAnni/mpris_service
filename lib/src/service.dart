@@ -20,6 +20,7 @@ class MPRISService extends DBusObject {
     bool canSeek = false,
     this.supportLoopStatus = false,
     this.supportShuffle = false,
+    this.supportVolume = false,
   })  : _canRaise = canRaise,
         _canQuit = canQuit,
         _canPlay = canPlay,
@@ -220,6 +221,22 @@ class MPRISService extends DBusObject {
         "Seeked",
         [DBusInt64(_position)],
       );
+    }
+  }
+
+  final bool supportVolume;
+  double _volume = 0;
+  double get volume => _volume;
+  set volume(double volume) {
+    _position = position.inMicroseconds;
+    if (supportVolume) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "Volume": DBusDouble(volume),
+        },
+      );
+      _volume = volume;
     }
   }
 
@@ -441,7 +458,7 @@ class MPRISService extends DBusObject {
       } else if (name == 'Metadata') {
         return DBusMethodSuccessResponse([_metadata.toValue()]);
       } else if (name == 'Volume') {
-        return DBusMethodSuccessResponse([const DBusDouble(1)]);
+        return DBusMethodSuccessResponse([DBusDouble(_volume)]);
       } else if (name == 'Position') {
         return DBusMethodSuccessResponse([DBusInt64(_position)]);
       } else if (name == 'MinimumRate') {
@@ -502,33 +519,32 @@ class MPRISService extends DBusObject {
     } else if (interface == 'org.mpris.MediaPlayer2.Player') {
       if (name == 'PlaybackStatus') {
         return DBusMethodErrorResponse.propertyReadOnly();
-      } else if (supportLoopStatus && name == 'LoopStatus') {
+      } else if (supportLoopStatus && name == 'LoopStatus' && canControl) {
         if (value.signature != DBusSignature('s')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         loopStatus = LoopStatus.fromString(value.asString());
-        return DBusMethodErrorResponse.notSupported();
+        return DBusMethodSuccessResponse();
       } else if (name == 'Rate') {
         if (value.signature != DBusSignature('d')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         // TODO: support rate
         return DBusMethodErrorResponse.notSupported();
-      } else if (supportShuffle && name == 'Shuffle') {
+      } else if (supportShuffle && name == 'Shuffle' && canControl) {
         if (value.signature != DBusSignature('b')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         shuffle = value.asBoolean();
-        return DBusMethodErrorResponse.notSupported();
+        return DBusMethodSuccessResponse();
       } else if (name == 'Metadata') {
         return DBusMethodErrorResponse.propertyReadOnly();
-      } else if (name == 'Volume') {
+      } else if (name == 'Volume' && canControl) {
         if (value.signature != DBusSignature('d')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        // TODO: support volume
-        // return setVolume(value.asDouble());
-        return DBusMethodErrorResponse.notSupported();
+        volume = value.asDouble();
+        return DBusMethodSuccessResponse();
       } else if (name == 'Position') {
         return DBusMethodErrorResponse.propertyReadOnly();
       } else if (name == 'MinimumRate') {
