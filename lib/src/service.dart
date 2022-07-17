@@ -1,21 +1,6 @@
 import 'package:dbus/dbus.dart';
 import 'package:mpris_service/mpris_service.dart';
-
-enum PlaybackStatus {
-  playing,
-  paused,
-  stopped,
-}
-
-extension PlaybackStatusToString on PlaybackStatus {
-  String toStatusString() {
-    return {
-      PlaybackStatus.playing: "Playing",
-      PlaybackStatus.paused: "Paused",
-      PlaybackStatus.stopped: "Stopped",
-    }[this]!;
-  }
-}
+import 'package:mpris_service/src/enums.dart';
 
 class MPRISService extends DBusObject {
   MPRISService(
@@ -33,6 +18,7 @@ class MPRISService extends DBusObject {
     bool canGoPrevious = true,
     bool canGoNext = true,
     bool canSeek = false,
+    this.supportLoopStatus = false,
   })  : _canRaise = canRaise,
         _canQuit = canQuit,
         _canPlay = canPlay,
@@ -167,21 +153,38 @@ class MPRISService extends DBusObject {
   Future<void> doSetPosition(String trackId, int position) async {}
   Future<void> doOpenUri(String uri) async {}
 
-  PlaybackStatus _playingStatus = PlaybackStatus.stopped;
+  PlaybackStatus _playbackStatus = PlaybackStatus.stopped;
+  PlaybackStatus get playingStatus => _playbackStatus;
   set playingStatus(PlaybackStatus playingStatus) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
       changedProperties: {
-        "PlaybackStatus": DBusString(playingStatus.toStatusString()),
+        "PlaybackStatus": DBusString(playingStatus.toString()),
       },
     );
-    _playingStatus = playingStatus;
+    _playbackStatus = playingStatus;
+  }
+
+  final bool supportLoopStatus;
+  LoopStatus _loopStatus = LoopStatus.none;
+  LoopStatus get loopStatus => _loopStatus;
+  set loopStatus(LoopStatus loopStatus) {
+    if (supportLoopStatus) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "LoopStatus": DBusString(loopStatus.toString()),
+        },
+      );
+      _loopStatus = loopStatus;
+    }
   }
 
   Metadata _metadata = Metadata(
     trackId: "/org/mpris/MediaPlayer2/TrackList/NoTrack",
     trackTitle: "No title",
   );
+  Metadata get metadata => _metadata;
   set metadata(Metadata metadata) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -193,6 +196,7 @@ class MPRISService extends DBusObject {
   }
 
   int _position = 0;
+  Duration get position => Duration(microseconds: _position);
   set position(Duration position) {
     _position = position.inMicroseconds;
     if (emitSeekedSignal) {
@@ -260,8 +264,9 @@ class MPRISService extends DBusObject {
       ], properties: [
         DBusIntrospectProperty('PlaybackStatus', DBusSignature('s'),
             access: DBusPropertyAccess.read),
-        // DBusIntrospectProperty('LoopStatus', DBusSignature('s'),
-        //     access: DBusPropertyAccess.readwrite),
+        if (supportLoopStatus)
+          DBusIntrospectProperty('LoopStatus', DBusSignature('s'),
+              access: DBusPropertyAccess.readwrite),
         DBusIntrospectProperty('Rate', DBusSignature('d'),
             access: DBusPropertyAccess.readwrite),
         // DBusIntrospectProperty('Shuffle', DBusSignature('b'),
@@ -410,9 +415,9 @@ class MPRISService extends DBusObject {
     } else if (interface == 'org.mpris.MediaPlayer2.Player') {
       if (name == 'PlaybackStatus') {
         return DBusMethodSuccessResponse(
-            [DBusString(_playingStatus.toStatusString())]);
-        // } else if (name == 'LoopStatus') {
-        //   return DBusMethodSuccessResponse([const DBusString("Track")]);
+            [DBusString(_playbackStatus.toString())]);
+      } else if (supportLoopStatus && name == 'LoopStatus') {
+        return DBusMethodSuccessResponse([DBusString(_loopStatus.toString())]);
       } else if (name == 'Rate') {
         return DBusMethodSuccessResponse([const DBusDouble(1)]);
         // } else if (name == 'Shuffle') {
@@ -481,13 +486,12 @@ class MPRISService extends DBusObject {
     } else if (interface == 'org.mpris.MediaPlayer2.Player') {
       if (name == 'PlaybackStatus') {
         return DBusMethodErrorResponse.propertyReadOnly();
-        // } else if (name == 'LoopStatus') {
-        //   if (value.signature != DBusSignature('s')) {
-        //     return DBusMethodErrorResponse.invalidArgs();
-        //   }
-        //   // TODO: support loop
-        //   // return setLoopStatus(value.asString());
-        //   return DBusMethodErrorResponse.notSupported();
+      } else if (supportLoopStatus && name == 'LoopStatus') {
+        if (value.signature != DBusSignature('s')) {
+          return DBusMethodErrorResponse.invalidArgs();
+        }
+        loopStatus = LoopStatus.fromString(value.asString());
+        return DBusMethodErrorResponse.notSupported();
       } else if (name == 'Rate') {
         if (value.signature != DBusSignature('d')) {
           return DBusMethodErrorResponse.invalidArgs();
@@ -574,9 +578,11 @@ class MPRISService extends DBusObject {
       properties['PlaybackStatus'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
               .returnValues[0];
-      // properties['LoopStatus'] =
-      //     (await getProperty('org.mpris.MediaPlayer2.Player', 'LoopStatus'))
-      //         .returnValues[0];
+      if (supportLoopStatus) {
+        properties['LoopStatus'] =
+            (await getProperty('org.mpris.MediaPlayer2.Player', 'LoopStatus'))
+                .returnValues[0];
+      }
       properties['Rate'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'Rate'))
               .returnValues[0];
