@@ -124,7 +124,7 @@ class MPRISService extends DBusObject {
   final bool canControl;
 
   bool _canGoPrevious;
-  bool get canGoPrevious => _canGoPrevious;
+  bool get canGoPrevious => canControl && _canGoPrevious;
   set canGoPrevious(bool canGoPrevious) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -138,7 +138,7 @@ class MPRISService extends DBusObject {
   Future<void> onPrevious() async {}
 
   bool _canGoNext;
-  bool get canGoNext => _canGoNext;
+  bool get canGoNext => canControl && _canGoNext;
   set canGoNext(bool canGoNext) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -152,7 +152,7 @@ class MPRISService extends DBusObject {
   Future<void> onNext() async {}
 
   bool _canPlay;
-  bool get canPlay => _canPlay;
+  bool get canPlay => canControl && _canPlay;
   set canPlay(bool canPlay) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -166,7 +166,7 @@ class MPRISService extends DBusObject {
   Future<void> onPlay() async {}
 
   bool _canPause;
-  bool get canPause => _canPause;
+  bool get canPause => canControl && _canPause;
   set canPause(bool canPause) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -182,7 +182,7 @@ class MPRISService extends DBusObject {
   Future<void> onPlayPause() async {}
 
   bool _canSeek;
-  bool get canSeek => _canSeek;
+  bool get canSeek => canControl && _canSeek;
   set canSeek(bool canSeek) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -435,37 +435,37 @@ class MPRISService extends DBusObject {
         }
         await onNext();
         return DBusMethodSuccessResponse();
-      } else if (methodCall.name == 'Previous') {
+      } else if (methodCall.name == 'Previous' && canGoPrevious) {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         await onPrevious();
         return DBusMethodSuccessResponse();
-      } else if (methodCall.name == 'Pause') {
+      } else if (methodCall.name == 'Pause' && canPause) {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         await onPause();
         return DBusMethodSuccessResponse();
-      } else if (methodCall.name == 'PlayPause') {
+      } else if (methodCall.name == 'PlayPause' && canPlay && canPause) {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         await onPlayPause();
         return DBusMethodSuccessResponse();
-      } else if (methodCall.name == 'Stop') {
+      } else if (methodCall.name == 'Stop' && canControl) {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         await onStop();
         return DBusMethodSuccessResponse();
-      } else if (methodCall.name == 'Play') {
+      } else if (methodCall.name == 'Play' && canPlay) {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         await onPlay();
         return DBusMethodSuccessResponse();
-      } else if (methodCall.name == 'Seek') {
+      } else if (methodCall.name == 'Seek' && canSeek) {
         if (methodCall.signature != DBusSignature('x')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
@@ -487,8 +487,9 @@ class MPRISService extends DBusObject {
       } else {
         return DBusMethodErrorResponse.unknownMethod();
       }
+    } else {
+      return DBusMethodErrorResponse.unknownInterface();
     }
-    return DBusMethodErrorResponse.unknownInterface();
   }
 
   @override
@@ -516,8 +517,6 @@ class MPRISService extends DBusObject {
       } else if (name == 'SupportedMimeTypes') {
         return DBusMethodSuccessResponse(
             [DBusArray.string(supportedMimeTypes)]);
-      } else {
-        return DBusMethodErrorResponse.unknownProperty();
       }
     } else if (interface == 'org.mpris.MediaPlayer2.Player') {
       if (name == 'PlaybackStatus') {
@@ -542,26 +541,21 @@ class MPRISService extends DBusObject {
       } else if (name == 'MaximumRate') {
         return DBusMethodSuccessResponse([const DBusDouble(1)]);
       } else if (name == 'CanGoNext') {
-        return DBusMethodSuccessResponse(
-            [DBusBoolean(canControl && _canGoNext)]);
+        return DBusMethodSuccessResponse([DBusBoolean(canGoNext)]);
       } else if (name == 'CanGoPrevious') {
-        return DBusMethodSuccessResponse(
-            [DBusBoolean(canControl && _canGoPrevious)]);
+        return DBusMethodSuccessResponse([DBusBoolean(canGoPrevious)]);
       } else if (name == 'CanPlay') {
-        return DBusMethodSuccessResponse([DBusBoolean(canControl && _canPlay)]);
+        return DBusMethodSuccessResponse([DBusBoolean(canPlay)]);
       } else if (name == 'CanPause') {
-        return DBusMethodSuccessResponse(
-            [DBusBoolean(canControl && _canPause)]);
+        return DBusMethodSuccessResponse([DBusBoolean(canPause)]);
       } else if (name == 'CanSeek') {
-        return DBusMethodSuccessResponse([DBusBoolean(canControl && _canSeek)]);
+        return DBusMethodSuccessResponse([DBusBoolean(canSeek)]);
       } else if (name == 'CanControl') {
         return DBusMethodSuccessResponse([DBusBoolean(canControl)]);
-      } else {
-        return DBusMethodErrorResponse.unknownProperty();
       }
-    } else {
-      return DBusMethodErrorResponse.unknownProperty();
     }
+
+    return DBusMethodErrorResponse.unknownProperty();
   }
 
   @override
@@ -594,8 +588,6 @@ class MPRISService extends DBusObject {
         return DBusMethodErrorResponse.propertyReadOnly();
       } else if (name == 'SupportedMimeTypes') {
         return DBusMethodErrorResponse.propertyReadOnly();
-      } else {
-        return DBusMethodErrorResponse.unknownProperty();
       }
     } else if (interface == 'org.mpris.MediaPlayer2.Player') {
       if (name == 'PlaybackStatus') {
@@ -644,12 +636,10 @@ class MPRISService extends DBusObject {
         return DBusMethodErrorResponse.propertyReadOnly();
       } else if (name == 'CanControl') {
         return DBusMethodErrorResponse.propertyReadOnly();
-      } else {
-        return DBusMethodErrorResponse.unknownProperty();
       }
-    } else {
-      return DBusMethodErrorResponse.unknownProperty();
     }
+
+    return DBusMethodErrorResponse.unknownProperty();
   }
 
   @override
