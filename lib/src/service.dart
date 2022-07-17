@@ -179,6 +179,8 @@ class MPRISService extends DBusObject {
     }
   }
 
+  Future<void> onLoopStatus(LoopStatus loopStatus) async {}
+
   final bool supportShuffle;
   bool _shuffle = false;
   bool get shuffle => _shuffle;
@@ -193,6 +195,8 @@ class MPRISService extends DBusObject {
       _shuffle = shuffle;
     }
   }
+
+  Future<void> onShuffle(bool shuffle) async {}
 
   Metadata _metadata = Metadata(
     trackId: "/org/mpris/MediaPlayer2/TrackList/NoTrack",
@@ -225,7 +229,7 @@ class MPRISService extends DBusObject {
   }
 
   final bool supportVolume;
-  double _volume = 0;
+  double _volume = 1;
   double get volume => _volume;
   set volume(double volume) {
     _position = position.inMicroseconds;
@@ -523,7 +527,7 @@ class MPRISService extends DBusObject {
         if (value.signature != DBusSignature('s')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        loopStatus = LoopStatus.fromString(value.asString());
+        await onLoopStatus(LoopStatus.fromString(value.asString()));
         return DBusMethodSuccessResponse();
       } else if (name == 'Rate') {
         if (value.signature != DBusSignature('d')) {
@@ -535,7 +539,7 @@ class MPRISService extends DBusObject {
         if (value.signature != DBusSignature('b')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        shuffle = value.asBoolean();
+        await onShuffle(value.asBoolean());
         return DBusMethodSuccessResponse();
       } else if (name == 'Metadata') {
         return DBusMethodErrorResponse.propertyReadOnly();
