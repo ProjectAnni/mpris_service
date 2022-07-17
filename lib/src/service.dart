@@ -471,7 +471,7 @@ class MPRISService extends DBusObject {
         }
         await onSeek(methodCall.values[0].asInt64());
         return DBusMethodSuccessResponse();
-      } else if (methodCall.name == 'SetPosition') {
+      } else if (methodCall.name == 'SetPosition' && canSeek) {
         if (methodCall.signature != DBusSignature('ox')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
