@@ -19,6 +19,7 @@ class MPRISService extends DBusObject {
     bool canGoNext = true,
     bool canSeek = false,
     this.supportLoopStatus = false,
+    this.supportShuffle = false,
   })  : _canRaise = canRaise,
         _canQuit = canQuit,
         _canPlay = canPlay,
@@ -78,9 +79,6 @@ class MPRISService extends DBusObject {
   /// This property is not expected to change, as it describes an intrinsic capability of the implementation.
   /// If this is false, clients should assume that all properties on this interface are read-only (and will raise errors if writing to them is attempted), no methods are implemented and all other properties starting with "Can" are also false.
   final bool canControl;
-
-  /// Whether to emit Seeked signal after position change
-  final bool emitSeekedSignal;
 
   bool _canGoPrevious;
   set canGoPrevious(bool canGoPrevious) {
@@ -180,6 +178,21 @@ class MPRISService extends DBusObject {
     }
   }
 
+  final bool supportShuffle;
+  bool _shuffle = false;
+  bool get shuffle => _shuffle;
+  set shuffle(bool shuffle) {
+    if (supportLoopStatus) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "Shuffle": DBusBoolean(shuffle),
+        },
+      );
+      _shuffle = shuffle;
+    }
+  }
+
   Metadata _metadata = Metadata(
     trackId: "/org/mpris/MediaPlayer2/TrackList/NoTrack",
     trackTitle: "No title",
@@ -195,6 +208,8 @@ class MPRISService extends DBusObject {
     _metadata = metadata;
   }
 
+  /// Whether to emit Seeked signal after position change
+  final bool emitSeekedSignal;
   int _position = 0;
   Duration get position => Duration(microseconds: _position);
   set position(Duration position) {
@@ -269,8 +284,9 @@ class MPRISService extends DBusObject {
               access: DBusPropertyAccess.readwrite),
         DBusIntrospectProperty('Rate', DBusSignature('d'),
             access: DBusPropertyAccess.readwrite),
-        // DBusIntrospectProperty('Shuffle', DBusSignature('b'),
-        //     access: DBusPropertyAccess.readwrite),
+        if (supportShuffle)
+          DBusIntrospectProperty('Shuffle', DBusSignature('b'),
+              access: DBusPropertyAccess.readwrite),
         DBusIntrospectProperty('Metadata', DBusSignature('a{sv}'),
             access: DBusPropertyAccess.read),
         DBusIntrospectProperty('Volume', DBusSignature('d'),
@@ -420,8 +436,8 @@ class MPRISService extends DBusObject {
         return DBusMethodSuccessResponse([DBusString(_loopStatus.toString())]);
       } else if (name == 'Rate') {
         return DBusMethodSuccessResponse([const DBusDouble(1)]);
-        // } else if (name == 'Shuffle') {
-        //   return DBusMethodSuccessResponse([const DBusBoolean(false)]);
+      } else if (supportShuffle && name == 'Shuffle') {
+        return DBusMethodSuccessResponse([const DBusBoolean(false)]);
       } else if (name == 'Metadata') {
         return DBusMethodSuccessResponse([_metadata.toValue()]);
       } else if (name == 'Volume') {
@@ -498,12 +514,11 @@ class MPRISService extends DBusObject {
         }
         // TODO: support rate
         return DBusMethodErrorResponse.notSupported();
-      } else if (name == 'Shuffle') {
+      } else if (supportShuffle && name == 'Shuffle') {
         if (value.signature != DBusSignature('b')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        // TODO: support shuffle
-        // return setShuffle(value.asBoolean());
+        shuffle = value.asBoolean();
         return DBusMethodErrorResponse.notSupported();
       } else if (name == 'Metadata') {
         return DBusMethodErrorResponse.propertyReadOnly();
@@ -543,7 +558,7 @@ class MPRISService extends DBusObject {
   @override
   Future<DBusMethodResponse> getAllProperties(String interface) async {
     // print({"getAllProperties", interface});
-    var properties = <String, DBusValue>{};
+    final properties = <String, DBusValue>{};
     if (interface == 'org.mpris.MediaPlayer2') {
       properties['CanQuit'] =
           (await getProperty('org.mpris.MediaPlayer2', 'CanQuit'))
@@ -586,9 +601,11 @@ class MPRISService extends DBusObject {
       properties['Rate'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'Rate'))
               .returnValues[0];
-      // properties['Shuffle'] =
-      //     (await getProperty('org.mpris.MediaPlayer2.Player', 'Shuffle'))
-      //         .returnValues[0];
+      if (supportShuffle) {
+        properties['Shuffle'] =
+            (await getProperty('org.mpris.MediaPlayer2.Player', 'Shuffle'))
+                .returnValues[0];
+      }
       properties['Metadata'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'Metadata'))
               .returnValues[0];
