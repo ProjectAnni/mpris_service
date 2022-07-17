@@ -200,8 +200,8 @@ class MPRISService extends DBusObject {
   Future<void> onOpenUri(String uri) async {}
 
   PlaybackStatus _playbackStatus = PlaybackStatus.stopped;
-  PlaybackStatus get playingStatus => _playbackStatus;
-  set playingStatus(PlaybackStatus playingStatus) {
+  PlaybackStatus get playbackStatus => _playbackStatus;
+  set playbackStatus(PlaybackStatus playingStatus) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
       changedProperties: {
