@@ -5,9 +5,11 @@ import 'package:mpris_service/src/enums.dart';
 class MPRISService extends DBusObject {
   MPRISService(
     String name, {
-    required this.identity,
+    required String identity,
     bool canRaise = false,
     bool canQuit = false,
+    this.supportFullscreen = false,
+    bool canSetFullscreen = false,
     this.desktopEntry,
     this.supportedUriSchemes = const [],
     this.supportedMimeTypes = const [],
@@ -20,7 +22,9 @@ class MPRISService extends DBusObject {
     bool canSeek = false,
     this.supportLoopStatus = false,
     this.supportShuffle = false,
-  })  : _canRaise = canRaise,
+  })  : _identity = identity,
+        _canSetFullscreen = canSetFullscreen,
+        _canRaise = canRaise,
         _canQuit = canQuit,
         _canPlay = canPlay,
         _canPause = canPause,
@@ -41,7 +45,17 @@ class MPRISService extends DBusObject {
   }
 
   ////////////////////////// Root //////////////////////////
-  final String identity;
+  String _identity;
+  String get identity => _identity;
+  set identity(String identity) {
+    emitPropertiesChanged(
+      "org.mpris.MediaPlayer2",
+      changedProperties: {
+        "Identity": DBusString(identity),
+      },
+    );
+    _identity = identity;
+  }
 
   final String? desktopEntry;
   final List<String> supportedUriSchemes;
@@ -74,6 +88,33 @@ class MPRISService extends DBusObject {
   }
 
   Future<void> onQuit() async {}
+
+  final bool supportFullscreen;
+  bool _fullscreen = false;
+  bool get fullscreen => _fullscreen;
+  set fullscreen(bool fullscreen) {
+    emitPropertiesChanged(
+      "org.mpris.MediaPlayer2",
+      changedProperties: {
+        "Fullscreen": DBusBoolean(fullscreen),
+      },
+    );
+    _fullscreen = fullscreen;
+  }
+
+  Future<void> onFullscreen(bool fullscreen) async {}
+
+  bool _canSetFullscreen;
+  bool get canSetFullscreen => _canSetFullscreen;
+  set canSetFullscreen(bool canSetFullscreen) {
+    emitPropertiesChanged(
+      "org.mpris.MediaPlayer2",
+      changedProperties: {
+        "CanSetFullscreen": DBusBoolean(canSetFullscreen),
+      },
+    );
+    _canSetFullscreen = canSetFullscreen;
+  }
 
   ////////////////////////// Player //////////////////////////
   ///
@@ -274,10 +315,12 @@ class MPRISService extends DBusObject {
         properties: [
           DBusIntrospectProperty('CanQuit', DBusSignature('b'),
               access: DBusPropertyAccess.read),
-          DBusIntrospectProperty('Fullscreen', DBusSignature('b'),
-              access: DBusPropertyAccess.readwrite),
-          DBusIntrospectProperty('CanSetFullscreen', DBusSignature('b'),
-              access: DBusPropertyAccess.read),
+          if (supportFullscreen)
+            DBusIntrospectProperty('Fullscreen', DBusSignature('b'),
+                access: DBusPropertyAccess.readwrite),
+          if (supportFullscreen)
+            DBusIntrospectProperty('CanSetFullscreen', DBusSignature('b'),
+                access: DBusPropertyAccess.read),
           DBusIntrospectProperty('CanRaise', DBusSignature('b'),
               access: DBusPropertyAccess.read),
           DBusIntrospectProperty('HasTrackList', DBusSignature('b'),
@@ -454,18 +497,17 @@ class MPRISService extends DBusObject {
     if (interface == 'org.mpris.MediaPlayer2') {
       if (name == 'CanQuit') {
         return DBusMethodSuccessResponse([DBusBoolean(_canQuit)]);
-      } else if (name == 'Fullscreen') {
-        return DBusMethodSuccessResponse([const DBusBoolean(false)]);
-      } else if (name == 'CanSetFullscreen') {
-        // TODO: support fullscreen
-        return DBusMethodSuccessResponse([const DBusBoolean(false)]);
+      } else if (name == 'Fullscreen' && supportFullscreen) {
+        return DBusMethodSuccessResponse([DBusBoolean(_fullscreen)]);
+      } else if (name == 'CanSetFullscreen' && supportFullscreen) {
+        return DBusMethodSuccessResponse([DBusBoolean(_canSetFullscreen)]);
       } else if (name == 'CanRaise') {
         return DBusMethodSuccessResponse([DBusBoolean(_canRaise)]);
       } else if (name == 'HasTrackList') {
         // TODO: support tracklist
         return DBusMethodSuccessResponse([const DBusBoolean(false)]);
       } else if (name == 'Identity') {
-        return DBusMethodSuccessResponse([DBusString(identity)]);
+        return DBusMethodSuccessResponse([DBusString(_identity)]);
       } else if (name == 'DesktopEntry' && desktopEntry != null) {
         return DBusMethodSuccessResponse([DBusString(desktopEntry!)]);
       } else if (name == 'SupportedUriSchemes') {
@@ -528,12 +570,17 @@ class MPRISService extends DBusObject {
     if (interface == 'org.mpris.MediaPlayer2') {
       if (name == 'CanQuit') {
         return DBusMethodErrorResponse.propertyReadOnly();
-      } else if (name == 'Fullscreen') {
+      } else if (name == 'Fullscreen' && supportFullscreen) {
         if (value.signature != DBusSignature('b')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        return DBusMethodErrorResponse.notSupported();
-      } else if (name == 'CanSetFullscreen') {
+        if (!_canSetFullscreen) {
+          return DBusMethodErrorResponse.notSupported();
+        } else {
+          await onFullscreen(value.asBoolean());
+          return DBusMethodSuccessResponse();
+        }
+      } else if (name == 'CanSetFullscreen' && supportFullscreen) {
         return DBusMethodErrorResponse.propertyReadOnly();
       } else if (name == 'CanRaise') {
         return DBusMethodErrorResponse.propertyReadOnly();
@@ -613,12 +660,16 @@ class MPRISService extends DBusObject {
       properties['CanQuit'] =
           (await getProperty('org.mpris.MediaPlayer2', 'CanQuit'))
               .returnValues[0];
-      properties['Fullscreen'] =
-          (await getProperty('org.mpris.MediaPlayer2', 'Fullscreen'))
-              .returnValues[0];
-      properties['CanSetFullscreen'] =
-          (await getProperty('org.mpris.MediaPlayer2', 'CanSetFullscreen'))
-              .returnValues[0];
+      if (supportFullscreen) {
+        properties['Fullscreen'] =
+            (await getProperty('org.mpris.MediaPlayer2', 'Fullscreen'))
+                .returnValues[0];
+      }
+      if (supportFullscreen) {
+        properties['CanSetFullscreen'] =
+            (await getProperty('org.mpris.MediaPlayer2', 'CanSetFullscreen'))
+                .returnValues[0];
+      }
       properties['CanRaise'] =
           (await getProperty('org.mpris.MediaPlayer2', 'CanRaise'))
               .returnValues[0];
