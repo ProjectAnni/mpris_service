@@ -20,7 +20,6 @@ class MPRISService extends DBusObject {
     bool canSeek = false,
     this.supportLoopStatus = false,
     this.supportShuffle = false,
-    this.supportVolume = false,
   })  : _canRaise = canRaise,
         _canQuit = canQuit,
         _canPlay = canPlay,
@@ -49,6 +48,7 @@ class MPRISService extends DBusObject {
   final List<String> supportedMimeTypes;
 
   bool _canRaise;
+  bool get canRaise => _canRaise;
   set canRaise(bool canRaise) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2",
@@ -62,6 +62,7 @@ class MPRISService extends DBusObject {
   Future<void> onRaise() async {}
 
   bool _canQuit;
+  bool get canQuit => _canQuit;
   set canQuit(bool canQuit) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2",
@@ -82,6 +83,7 @@ class MPRISService extends DBusObject {
   final bool canControl;
 
   bool _canGoPrevious;
+  bool get canGoPrevious => _canGoPrevious;
   set canGoPrevious(bool canGoPrevious) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -95,6 +97,7 @@ class MPRISService extends DBusObject {
   Future<void> doPrevious() async {}
 
   bool _canGoNext;
+  bool get canGoNext => _canGoNext;
   set canGoNext(bool canGoNext) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -108,6 +111,7 @@ class MPRISService extends DBusObject {
   Future<void> doNext() async {}
 
   bool _canPlay;
+  bool get canPlay => _canPlay;
   set canPlay(bool canPlay) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -121,6 +125,7 @@ class MPRISService extends DBusObject {
   Future<void> doPlay() async {}
 
   bool _canPause;
+  bool get canPause => _canPause;
   set canPause(bool canPause) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -136,6 +141,7 @@ class MPRISService extends DBusObject {
   Future<void> doPlayPause() async {}
 
   bool _canSeek;
+  bool get canSeek => _canSeek;
   set canSeek(bool canSeek) {
     emitPropertiesChanged(
       "org.mpris.MediaPlayer2.Player",
@@ -228,109 +234,135 @@ class MPRISService extends DBusObject {
     }
   }
 
-  final bool supportVolume;
   double _volume = 1;
   double get volume => _volume;
   set volume(double volume) {
-    _position = position.inMicroseconds;
-    if (supportVolume) {
-      emitPropertiesChanged(
-        "org.mpris.MediaPlayer2.Player",
-        changedProperties: {
-          "Volume": DBusDouble(volume),
-        },
-      );
-      _volume = volume;
-    }
+    emitPropertiesChanged(
+      "org.mpris.MediaPlayer2.Player",
+      changedProperties: {
+        "Volume": DBusDouble(volume),
+      },
+    );
+    _volume = volume;
   }
+
+  Future<void> onVolume(double volume) async {}
+
+  double _playbackRate = 1;
+  double get playbackRate => _playbackRate;
+  set playbackRate(double rate) {
+    emitPropertiesChanged(
+      "org.mpris.MediaPlayer2.Player",
+      changedProperties: {
+        "Rate": DBusDouble(rate),
+      },
+    );
+    _playbackRate = rate;
+  }
+
+  Future<void> onPlaybackRate(double rate) async {}
 
   @override
   List<DBusIntrospectInterface> introspect() {
     return [
-      DBusIntrospectInterface('org.mpris.MediaPlayer2', methods: [
-        DBusIntrospectMethod('Raise'),
-        DBusIntrospectMethod('Quit')
-      ], properties: [
-        DBusIntrospectProperty('CanQuit', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('Fullscreen', DBusSignature('b'),
-            access: DBusPropertyAccess.readwrite),
-        DBusIntrospectProperty('CanSetFullscreen', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('CanRaise', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('HasTrackList', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('Identity', DBusSignature('s'),
-            access: DBusPropertyAccess.read),
-        if (desktopEntry != null)
-          DBusIntrospectProperty('DesktopEntry', DBusSignature('s'),
+      DBusIntrospectInterface(
+        'org.mpris.MediaPlayer2',
+        methods: [
+          DBusIntrospectMethod('Raise'),
+          DBusIntrospectMethod('Quit'),
+        ],
+        properties: [
+          DBusIntrospectProperty('CanQuit', DBusSignature('b'),
               access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('SupportedUriSchemes', DBusSignature('as'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('SupportedMimeTypes', DBusSignature('as'),
-            access: DBusPropertyAccess.read)
-      ]),
-      DBusIntrospectInterface('org.mpris.MediaPlayer2.Player', methods: [
-        DBusIntrospectMethod('Next'),
-        DBusIntrospectMethod('Previous'),
-        DBusIntrospectMethod('Pause'),
-        DBusIntrospectMethod('PlayPause'),
-        DBusIntrospectMethod('Stop'),
-        DBusIntrospectMethod('Play'),
-        DBusIntrospectMethod('Seek', args: [
-          DBusIntrospectArgument(DBusSignature('x'), DBusArgumentDirection.in_,
-              name: 'Offset')
-        ]),
-        DBusIntrospectMethod('SetPosition', args: [
-          DBusIntrospectArgument(DBusSignature('o'), DBusArgumentDirection.in_,
-              name: 'TrackId'),
-          DBusIntrospectArgument(DBusSignature('x'), DBusArgumentDirection.in_,
-              name: 'Position')
-        ]),
-        DBusIntrospectMethod('OpenUri', args: [
-          DBusIntrospectArgument(DBusSignature('s'), DBusArgumentDirection.in_,
-              name: 'Uri')
-        ])
-      ], signals: [
-        DBusIntrospectSignal('Seeked', args: [
-          DBusIntrospectArgument(DBusSignature('x'), DBusArgumentDirection.out,
-              name: 'Position')
-        ])
-      ], properties: [
-        DBusIntrospectProperty('PlaybackStatus', DBusSignature('s'),
-            access: DBusPropertyAccess.read),
-        if (supportLoopStatus)
-          DBusIntrospectProperty('LoopStatus', DBusSignature('s'),
+          DBusIntrospectProperty('Fullscreen', DBusSignature('b'),
               access: DBusPropertyAccess.readwrite),
-        DBusIntrospectProperty('Rate', DBusSignature('d'),
-            access: DBusPropertyAccess.readwrite),
-        if (supportShuffle)
-          DBusIntrospectProperty('Shuffle', DBusSignature('b'),
+          DBusIntrospectProperty('CanSetFullscreen', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('CanRaise', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('HasTrackList', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('Identity', DBusSignature('s'),
+              access: DBusPropertyAccess.read),
+          if (desktopEntry != null)
+            DBusIntrospectProperty('DesktopEntry', DBusSignature('s'),
+                access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('SupportedUriSchemes', DBusSignature('as'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('SupportedMimeTypes', DBusSignature('as'),
+              access: DBusPropertyAccess.read)
+        ],
+      ),
+      DBusIntrospectInterface(
+        'org.mpris.MediaPlayer2.Player',
+        methods: [
+          DBusIntrospectMethod('Next'),
+          DBusIntrospectMethod('Previous'),
+          DBusIntrospectMethod('Pause'),
+          DBusIntrospectMethod('PlayPause'),
+          DBusIntrospectMethod('Stop'),
+          DBusIntrospectMethod('Play'),
+          DBusIntrospectMethod('Seek', args: [
+            DBusIntrospectArgument(
+                DBusSignature('x'), DBusArgumentDirection.in_,
+                name: 'Offset')
+          ]),
+          DBusIntrospectMethod('SetPosition', args: [
+            DBusIntrospectArgument(
+                DBusSignature('o'), DBusArgumentDirection.in_,
+                name: 'TrackId'),
+            DBusIntrospectArgument(
+                DBusSignature('x'), DBusArgumentDirection.in_,
+                name: 'Position')
+          ]),
+          DBusIntrospectMethod('OpenUri', args: [
+            DBusIntrospectArgument(
+                DBusSignature('s'), DBusArgumentDirection.in_,
+                name: 'Uri')
+          ]),
+        ],
+        signals: [
+          DBusIntrospectSignal('Seeked', args: [
+            DBusIntrospectArgument(
+                DBusSignature('x'), DBusArgumentDirection.out,
+                name: 'Position')
+          ]),
+        ],
+        properties: [
+          DBusIntrospectProperty('PlaybackStatus', DBusSignature('s'),
+              access: DBusPropertyAccess.read),
+          if (supportLoopStatus)
+            DBusIntrospectProperty('LoopStatus', DBusSignature('s'),
+                access: DBusPropertyAccess.readwrite),
+          DBusIntrospectProperty('Rate', DBusSignature('d'),
               access: DBusPropertyAccess.readwrite),
-        DBusIntrospectProperty('Metadata', DBusSignature('a{sv}'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('Volume', DBusSignature('d'),
-            access: DBusPropertyAccess.readwrite),
-        DBusIntrospectProperty('Position', DBusSignature('x'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('MinimumRate', DBusSignature('d'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('MaximumRate', DBusSignature('d'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('CanGoNext', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('CanGoPrevious', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('CanPlay', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('CanPause', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('CanSeek', DBusSignature('b'),
-            access: DBusPropertyAccess.read),
-        DBusIntrospectProperty('CanControl', DBusSignature('b'),
-            access: DBusPropertyAccess.read)
-      ])
+          if (supportShuffle)
+            DBusIntrospectProperty('Shuffle', DBusSignature('b'),
+                access: DBusPropertyAccess.readwrite),
+          DBusIntrospectProperty('Metadata', DBusSignature('a{sv}'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('Volume', DBusSignature('d'),
+              access: DBusPropertyAccess.readwrite),
+          DBusIntrospectProperty('Position', DBusSignature('x'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('MinimumRate', DBusSignature('d'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('MaximumRate', DBusSignature('d'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('CanGoNext', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('CanGoPrevious', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('CanPlay', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('CanPause', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('CanSeek', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+          DBusIntrospectProperty('CanControl', DBusSignature('b'),
+              access: DBusPropertyAccess.read),
+        ],
+      )
     ];
   }
 
@@ -338,13 +370,13 @@ class MPRISService extends DBusObject {
   Future<DBusMethodResponse> handleMethodCall(DBusMethodCall methodCall) async {
     // print({"handleMethodCall", methodCall.interface, methodCall.name});
     if (methodCall.interface == 'org.mpris.MediaPlayer2') {
-      if (methodCall.name == 'Raise') {
+      if (methodCall.name == 'Raise' && _canRaise) {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
         await onRaise();
         return DBusMethodSuccessResponse();
-      } else if (methodCall.name == 'Quit') {
+      } else if (methodCall.name == 'Quit' && _canQuit) {
         if (methodCall.values.isNotEmpty) {
           return DBusMethodErrorResponse.invalidArgs();
         }
@@ -434,12 +466,8 @@ class MPRISService extends DBusObject {
         return DBusMethodSuccessResponse([const DBusBoolean(false)]);
       } else if (name == 'Identity') {
         return DBusMethodSuccessResponse([DBusString(identity)]);
-      } else if (name == 'DesktopEntry') {
-        if (desktopEntry != null) {
-          return DBusMethodSuccessResponse([DBusString(desktopEntry!)]);
-        } else {
-          return DBusMethodErrorResponse.unknownProperty();
-        }
+      } else if (name == 'DesktopEntry' && desktopEntry != null) {
+        return DBusMethodSuccessResponse([DBusString(desktopEntry!)]);
       } else if (name == 'SupportedUriSchemes') {
         return DBusMethodSuccessResponse(
             [DBusArray.string(supportedUriSchemes)]);
@@ -456,17 +484,19 @@ class MPRISService extends DBusObject {
       } else if (supportLoopStatus && name == 'LoopStatus') {
         return DBusMethodSuccessResponse([DBusString(_loopStatus.toString())]);
       } else if (name == 'Rate') {
-        return DBusMethodSuccessResponse([const DBusDouble(1)]);
+        return DBusMethodSuccessResponse([DBusDouble(_playbackRate)]);
       } else if (supportShuffle && name == 'Shuffle') {
-        return DBusMethodSuccessResponse([const DBusBoolean(false)]);
+        return DBusMethodSuccessResponse([DBusBoolean(_shuffle)]);
       } else if (name == 'Metadata') {
         return DBusMethodSuccessResponse([_metadata.toValue()]);
       } else if (name == 'Volume') {
         return DBusMethodSuccessResponse([DBusDouble(_volume)]);
       } else if (name == 'Position') {
         return DBusMethodSuccessResponse([DBusInt64(_position)]);
+        // TODO
       } else if (name == 'MinimumRate') {
         return DBusMethodSuccessResponse([const DBusDouble(1)]);
+        // TODO
       } else if (name == 'MaximumRate') {
         return DBusMethodSuccessResponse([const DBusDouble(1)]);
       } else if (name == 'CanGoNext') {
@@ -533,8 +563,8 @@ class MPRISService extends DBusObject {
         if (value.signature != DBusSignature('d')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        // TODO: support rate
-        return DBusMethodErrorResponse.notSupported();
+        await onPlaybackRate(value.asDouble());
+        return DBusMethodSuccessResponse();
       } else if (supportShuffle && name == 'Shuffle' && canControl) {
         if (value.signature != DBusSignature('b')) {
           return DBusMethodErrorResponse.invalidArgs();
@@ -547,7 +577,7 @@ class MPRISService extends DBusObject {
         if (value.signature != DBusSignature('d')) {
           return DBusMethodErrorResponse.invalidArgs();
         }
-        volume = value.asDouble();
+        await onVolume(value.asDouble());
         return DBusMethodSuccessResponse();
       } else if (name == 'Position') {
         return DBusMethodErrorResponse.propertyReadOnly();
