@@ -1,6 +1,6 @@
 # mpris_service_example
 
-Demonstrates how to use the mpris_service plugin.
+Demonstrates how to use the anni_mpris_service plugin.
 
 ## Getting Started
 

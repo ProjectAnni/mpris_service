@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mpris_service/mpris_service.dart';
+import 'package:anni_mpris_service/anni_mpris_service.dart';
 
 void main() {
   runApp(const MyApp());

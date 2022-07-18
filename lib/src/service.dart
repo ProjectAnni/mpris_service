@@ -1,6 +1,5 @@
 import 'package:dbus/dbus.dart';
-import 'package:mpris_service/mpris_service.dart';
-import 'package:mpris_service/src/enums.dart';
+import 'package:anni_mpris_service/anni_mpris_service.dart';
 
 class MPRISService extends DBusObject {
   MPRISService(
