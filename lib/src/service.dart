@@ -47,13 +47,15 @@ class MPRISService extends DBusObject {
   String _identity;
   String get identity => _identity;
   set identity(String identity) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2",
-      changedProperties: {
-        "Identity": DBusString(identity),
-      },
-    );
-    _identity = identity;
+    if (identity != _identity) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2",
+        changedProperties: {
+          "Identity": DBusString(identity),
+        },
+      );
+      _identity = identity;
+    }
   }
 
   final String? desktopEntry;
@@ -63,13 +65,15 @@ class MPRISService extends DBusObject {
   bool _canRaise;
   bool get canRaise => _canRaise;
   set canRaise(bool canRaise) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2",
-      changedProperties: {
-        "CanRaise": DBusBoolean(canRaise),
-      },
-    );
-    _canRaise = canRaise;
+    if (canRaise != _canRaise) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2",
+        changedProperties: {
+          "CanRaise": DBusBoolean(canRaise),
+        },
+      );
+      _canRaise = canRaise;
+    }
   }
 
   Future<void> onRaise() async {}
@@ -77,13 +81,15 @@ class MPRISService extends DBusObject {
   bool _canQuit;
   bool get canQuit => _canQuit;
   set canQuit(bool canQuit) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2",
-      changedProperties: {
-        "CanQuit": DBusBoolean(canQuit),
-      },
-    );
-    _canQuit = canQuit;
+    if (canQuit != _canQuit) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2",
+        changedProperties: {
+          "CanQuit": DBusBoolean(canQuit),
+        },
+      );
+      _canQuit = canQuit;
+    }
   }
 
   Future<void> onQuit() async {}
@@ -92,13 +98,15 @@ class MPRISService extends DBusObject {
   bool _fullscreen = false;
   bool get fullscreen => _fullscreen;
   set fullscreen(bool fullscreen) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2",
-      changedProperties: {
-        "Fullscreen": DBusBoolean(fullscreen),
-      },
-    );
-    _fullscreen = fullscreen;
+    if (fullscreen != _fullscreen) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2",
+        changedProperties: {
+          "Fullscreen": DBusBoolean(fullscreen),
+        },
+      );
+      _fullscreen = fullscreen;
+    }
   }
 
   Future<void> onFullscreen(bool fullscreen) async {}
@@ -106,13 +114,15 @@ class MPRISService extends DBusObject {
   bool _canSetFullscreen;
   bool get canSetFullscreen => _canSetFullscreen;
   set canSetFullscreen(bool canSetFullscreen) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2",
-      changedProperties: {
-        "CanSetFullscreen": DBusBoolean(canSetFullscreen),
-      },
-    );
-    _canSetFullscreen = canSetFullscreen;
+    if (canSetFullscreen != _canSetFullscreen) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2",
+        changedProperties: {
+          "CanSetFullscreen": DBusBoolean(canSetFullscreen),
+        },
+      );
+      _canSetFullscreen = canSetFullscreen;
+    }
   }
 
   ////////////////////////// Player //////////////////////////
@@ -125,13 +135,15 @@ class MPRISService extends DBusObject {
   bool _canGoPrevious;
   bool get canGoPrevious => canControl && _canGoPrevious;
   set canGoPrevious(bool canGoPrevious) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "CanGoPrevious": DBusBoolean(canGoPrevious),
-      },
-    );
-    _canGoPrevious = canGoPrevious;
+    if (canControl && canGoPrevious != _canGoPrevious) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "CanGoPrevious": DBusBoolean(canGoPrevious),
+        },
+      );
+      _canGoPrevious = canGoPrevious;
+    }
   }
 
   Future<void> onPrevious() async {}
@@ -139,13 +151,15 @@ class MPRISService extends DBusObject {
   bool _canGoNext;
   bool get canGoNext => canControl && _canGoNext;
   set canGoNext(bool canGoNext) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "CanGoNext": DBusBoolean(canGoNext),
-      },
-    );
-    _canGoNext = canGoNext;
+    if (canControl && canGoNext != _canGoNext) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "CanGoNext": DBusBoolean(canGoNext),
+        },
+      );
+      _canGoNext = canGoNext;
+    }
   }
 
   Future<void> onNext() async {}
@@ -153,13 +167,15 @@ class MPRISService extends DBusObject {
   bool _canPlay;
   bool get canPlay => canControl && _canPlay;
   set canPlay(bool canPlay) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "CanPlay": DBusBoolean(canPlay),
-      },
-    );
-    _canPlay = canPlay;
+    if (canControl && canPlay != _canPlay) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "CanPlay": DBusBoolean(canPlay),
+        },
+      );
+      _canPlay = canPlay;
+    }
   }
 
   Future<void> onPlay() async {}
@@ -167,13 +183,15 @@ class MPRISService extends DBusObject {
   bool _canPause;
   bool get canPause => canControl && _canPause;
   set canPause(bool canPause) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "CanPause": DBusBoolean(canPause),
-      },
-    );
-    _canPause = canPause;
+    if (canControl && canPause != _canPause) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "CanPause": DBusBoolean(canPause),
+        },
+      );
+      _canPause = canPause;
+    }
   }
 
   Future<void> onPause() async {}
@@ -183,13 +201,15 @@ class MPRISService extends DBusObject {
   bool _canSeek;
   bool get canSeek => canControl && _canSeek;
   set canSeek(bool canSeek) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "CanSeek": DBusBoolean(canSeek),
-      },
-    );
-    _canSeek = canSeek;
+    if (canControl && canSeek != _canSeek) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "CanSeek": DBusBoolean(canSeek),
+        },
+      );
+      _canSeek = canSeek;
+    }
   }
 
   Future<void> onSeek(int offset) async {}
@@ -201,20 +221,22 @@ class MPRISService extends DBusObject {
   PlaybackStatus _playbackStatus = PlaybackStatus.stopped;
   PlaybackStatus get playbackStatus => _playbackStatus;
   set playbackStatus(PlaybackStatus playingStatus) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "PlaybackStatus": DBusString(playingStatus.toString()),
-      },
-    );
-    _playbackStatus = playingStatus;
+    if (playingStatus != _playbackStatus) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "PlaybackStatus": DBusString(playingStatus.toString()),
+        },
+      );
+      _playbackStatus = playingStatus;
+    }
   }
 
   final bool supportLoopStatus;
   LoopStatus _loopStatus = LoopStatus.none;
   LoopStatus get loopStatus => _loopStatus;
   set loopStatus(LoopStatus loopStatus) {
-    if (supportLoopStatus) {
+    if (supportLoopStatus && loopStatus != _loopStatus) {
       emitPropertiesChanged(
         "org.mpris.MediaPlayer2.Player",
         changedProperties: {
@@ -231,7 +253,7 @@ class MPRISService extends DBusObject {
   bool _shuffle = false;
   bool get shuffle => _shuffle;
   set shuffle(bool shuffle) {
-    if (supportLoopStatus) {
+    if (supportLoopStatus && shuffle != _shuffle) {
       emitPropertiesChanged(
         "org.mpris.MediaPlayer2.Player",
         changedProperties: {
@@ -250,13 +272,15 @@ class MPRISService extends DBusObject {
   );
   Metadata get metadata => _metadata;
   set metadata(Metadata metadata) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "Metadata": metadata.toValue(),
-      },
-    );
-    _metadata = metadata;
+    if (supportLoopStatus && metadata != _metadata) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "Metadata": metadata.toValue(),
+        },
+      );
+      _metadata = metadata;
+    }
   }
 
   /// Whether to emit Seeked signal after position change
@@ -277,13 +301,15 @@ class MPRISService extends DBusObject {
   double _volume = 1;
   double get volume => _volume;
   set volume(double volume) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "Volume": DBusDouble(volume),
-      },
-    );
-    _volume = volume;
+    if (volume != _volume) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "Volume": DBusDouble(volume),
+        },
+      );
+      _volume = volume;
+    }
   }
 
   Future<void> onVolume(double volume) async {}
@@ -291,13 +317,15 @@ class MPRISService extends DBusObject {
   double _playbackRate = 1;
   double get playbackRate => _playbackRate;
   set playbackRate(double rate) {
-    emitPropertiesChanged(
-      "org.mpris.MediaPlayer2.Player",
-      changedProperties: {
-        "Rate": DBusDouble(rate),
-      },
-    );
-    _playbackRate = rate;
+    if (rate != _playbackRate) {
+      emitPropertiesChanged(
+        "org.mpris.MediaPlayer2.Player",
+        changedProperties: {
+          "Rate": DBusDouble(rate),
+        },
+      );
+      _playbackRate = rate;
+    }
   }
 
   Future<void> onPlaybackRate(double rate) async {}
