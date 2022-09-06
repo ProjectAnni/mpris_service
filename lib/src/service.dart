@@ -287,9 +287,9 @@ class MPRISService extends DBusObject {
   final bool emitSeekedSignal;
   int _position = 0;
   Duration get position => Duration(microseconds: _position);
-  set position(Duration position) {
+  void updatePosition(Duration position, {bool forceEmitSeeked = false}) {
     _position = position.inMicroseconds;
-    if (emitSeekedSignal) {
+    if (emitSeekedSignal || forceEmitSeeked) {
       emitSignal(
         "org.mpris.MediaPlayer2.Player",
         "Seeked",
@@ -438,7 +438,6 @@ class MPRISService extends DBusObject {
 
   @override
   Future<DBusMethodResponse> handleMethodCall(DBusMethodCall methodCall) async {
-    // print({"handleMethodCall", methodCall.interface, methodCall.name});
     if (methodCall.interface == 'org.mpris.MediaPlayer2') {
       if (methodCall.name == 'Raise' && _canRaise) {
         if (methodCall.values.isNotEmpty) {
@@ -521,64 +520,60 @@ class MPRISService extends DBusObject {
 
   @override
   Future<DBusMethodResponse> getProperty(String interface, String name) async {
-    // print({"getProperty", interface, name});
     if (interface == 'org.mpris.MediaPlayer2') {
       if (name == 'CanQuit') {
-        return DBusMethodSuccessResponse([DBusBoolean(_canQuit)]);
+        return DBusGetPropertyResponse(DBusBoolean(_canQuit));
       } else if (name == 'Fullscreen' && supportFullscreen) {
-        return DBusMethodSuccessResponse([DBusBoolean(_fullscreen)]);
+        return DBusGetPropertyResponse(DBusBoolean(_fullscreen));
       } else if (name == 'CanSetFullscreen' && supportFullscreen) {
-        return DBusMethodSuccessResponse([DBusBoolean(_canSetFullscreen)]);
+        return DBusGetPropertyResponse(DBusBoolean(_canSetFullscreen));
       } else if (name == 'CanRaise') {
-        return DBusMethodSuccessResponse([DBusBoolean(_canRaise)]);
+        return DBusGetPropertyResponse(DBusBoolean(_canRaise));
       } else if (name == 'HasTrackList') {
         // TODO: support tracklist
-        return DBusMethodSuccessResponse([const DBusBoolean(false)]);
+        return DBusGetPropertyResponse(const DBusBoolean(false));
       } else if (name == 'Identity') {
-        return DBusMethodSuccessResponse([DBusString(_identity)]);
+        return DBusGetPropertyResponse(DBusString(_identity));
       } else if (name == 'DesktopEntry' && desktopEntry != null) {
-        return DBusMethodSuccessResponse([DBusString(desktopEntry!)]);
+        return DBusGetPropertyResponse(DBusString(desktopEntry!));
       } else if (name == 'SupportedUriSchemes') {
-        return DBusMethodSuccessResponse(
-            [DBusArray.string(supportedUriSchemes)]);
+        return DBusGetPropertyResponse(DBusArray.string(supportedUriSchemes));
       } else if (name == 'SupportedMimeTypes') {
-        return DBusMethodSuccessResponse(
-            [DBusArray.string(supportedMimeTypes)]);
+        return DBusGetPropertyResponse(DBusArray.string(supportedMimeTypes));
       }
     } else if (interface == 'org.mpris.MediaPlayer2.Player') {
       if (name == 'PlaybackStatus') {
-        return DBusMethodSuccessResponse(
-            [DBusString(_playbackStatus.toString())]);
+        return DBusGetPropertyResponse(DBusString(_playbackStatus.toString()));
       } else if (supportLoopStatus && name == 'LoopStatus') {
-        return DBusMethodSuccessResponse([DBusString(_loopStatus.toString())]);
+        return DBusGetPropertyResponse(DBusString(_loopStatus.toString()));
       } else if (name == 'Rate') {
-        return DBusMethodSuccessResponse([DBusDouble(_playbackRate)]);
+        return DBusGetPropertyResponse(DBusDouble(_playbackRate));
       } else if (supportShuffle && name == 'Shuffle') {
-        return DBusMethodSuccessResponse([DBusBoolean(_shuffle)]);
+        return DBusGetPropertyResponse(DBusBoolean(_shuffle));
       } else if (name == 'Metadata') {
-        return DBusMethodSuccessResponse([_metadata.toValue()]);
+        return DBusGetPropertyResponse(_metadata.toValue());
       } else if (name == 'Volume') {
-        return DBusMethodSuccessResponse([DBusDouble(_volume)]);
+        return DBusGetPropertyResponse(DBusDouble(_volume));
       } else if (name == 'Position') {
-        return DBusMethodSuccessResponse([DBusInt64(_position)]);
+        return DBusGetPropertyResponse(DBusInt64(_position));
         // TODO
       } else if (name == 'MinimumRate') {
-        return DBusMethodSuccessResponse([const DBusDouble(1)]);
+        return DBusGetPropertyResponse(const DBusDouble(1));
         // TODO
       } else if (name == 'MaximumRate') {
-        return DBusMethodSuccessResponse([const DBusDouble(1)]);
+        return DBusGetPropertyResponse(const DBusDouble(1));
       } else if (name == 'CanGoNext') {
-        return DBusMethodSuccessResponse([DBusBoolean(canGoNext)]);
+        return DBusGetPropertyResponse(DBusBoolean(canGoNext));
       } else if (name == 'CanGoPrevious') {
-        return DBusMethodSuccessResponse([DBusBoolean(canGoPrevious)]);
+        return DBusGetPropertyResponse(DBusBoolean(canGoPrevious));
       } else if (name == 'CanPlay') {
-        return DBusMethodSuccessResponse([DBusBoolean(canPlay)]);
+        return DBusGetPropertyResponse(DBusBoolean(canPlay));
       } else if (name == 'CanPause') {
-        return DBusMethodSuccessResponse([DBusBoolean(canPause)]);
+        return DBusGetPropertyResponse(DBusBoolean(canPause));
       } else if (name == 'CanSeek') {
-        return DBusMethodSuccessResponse([DBusBoolean(canSeek)]);
+        return DBusGetPropertyResponse(DBusBoolean(canSeek));
       } else if (name == 'CanControl') {
-        return DBusMethodSuccessResponse([DBusBoolean(canControl)]);
+        return DBusGetPropertyResponse(DBusBoolean(canControl));
       }
     }
 
@@ -671,92 +666,115 @@ class MPRISService extends DBusObject {
 
   @override
   Future<DBusMethodResponse> getAllProperties(String interface) async {
-    // print({"getAllProperties", interface});
     final properties = <String, DBusValue>{};
     if (interface == 'org.mpris.MediaPlayer2') {
       properties['CanQuit'] =
           (await getProperty('org.mpris.MediaPlayer2', 'CanQuit'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       if (supportFullscreen) {
         properties['Fullscreen'] =
             (await getProperty('org.mpris.MediaPlayer2', 'Fullscreen'))
-                .returnValues[0];
+                .returnValues[0]
+                .asVariant();
       }
       if (supportFullscreen) {
         properties['CanSetFullscreen'] =
             (await getProperty('org.mpris.MediaPlayer2', 'CanSetFullscreen'))
-                .returnValues[0];
+                .returnValues[0]
+                .asVariant();
       }
       properties['CanRaise'] =
           (await getProperty('org.mpris.MediaPlayer2', 'CanRaise'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['HasTrackList'] =
           (await getProperty('org.mpris.MediaPlayer2', 'HasTrackList'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['Identity'] =
           (await getProperty('org.mpris.MediaPlayer2', 'Identity'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       if (desktopEntry != null) {
         properties['DesktopEntry'] =
             (await getProperty('org.mpris.MediaPlayer2', 'DesktopEntry'))
-                .returnValues[0];
+                .returnValues[0]
+                .asVariant();
       }
       properties['SupportedUriSchemes'] =
           (await getProperty('org.mpris.MediaPlayer2', 'SupportedUriSchemes'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['SupportedMimeTypes'] =
           (await getProperty('org.mpris.MediaPlayer2', 'SupportedMimeTypes'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
     } else if (interface == 'org.mpris.MediaPlayer2.Player') {
       properties['PlaybackStatus'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'PlaybackStatus'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       if (supportLoopStatus) {
         properties['LoopStatus'] =
             (await getProperty('org.mpris.MediaPlayer2.Player', 'LoopStatus'))
-                .returnValues[0];
+                .returnValues[0]
+                .asVariant();
       }
       properties['Rate'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'Rate'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       if (supportShuffle) {
         properties['Shuffle'] =
             (await getProperty('org.mpris.MediaPlayer2.Player', 'Shuffle'))
-                .returnValues[0];
+                .returnValues[0]
+                .asVariant();
       }
       properties['Metadata'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'Metadata'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['Volume'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'Volume'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['Position'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'Position'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['MinimumRate'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'MinimumRate'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['MaximumRate'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'MaximumRate'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['CanGoNext'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'CanGoNext'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['CanGoPrevious'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'CanGoPrevious'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['CanPlay'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'CanPlay'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['CanPause'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'CanPause'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['CanSeek'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'CanSeek'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
       properties['CanControl'] =
           (await getProperty('org.mpris.MediaPlayer2.Player', 'CanControl'))
-              .returnValues[0];
+              .returnValues[0]
+              .asVariant();
     }
     return DBusMethodSuccessResponse([DBusDict.stringVariant(properties)]);
   }
